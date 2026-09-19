@@ -25,7 +25,7 @@ BASE_STATS = ["HP", "Attack", "Defense", "Sp. Atk", "Sp. Def", "Speed"]
 def fetch_page(url: str) -> BeautifulSoup:
     response = requests.get(url, timeout=30, headers=HEADERS)
     response.raise_for_status()
-    return BeautifulSoup(response.text, "html.parser")
+    return BeautifulSoup(response.text, "lxml")
 
 
 SPECIAL_SLUGS = {
