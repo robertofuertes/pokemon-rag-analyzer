@@ -48,6 +48,7 @@ def extract_row_data(row: Any) -> Optional[Dict[str, Any]]:
     type_links = row.select("td:nth-of-type(3) a")
 
     if not number_cell or not name_cell:
+        href = name_cell.get("href", "")
         return None
 
     number_text = number_cell.get_text(strip=True)
@@ -68,6 +69,7 @@ def extract_row_data(row: Any) -> Optional[Dict[str, Any]]:
     return {
         "national_dex": pokedex_number,
         "name": name,
+        "url": href,
         "types": {
             "primary": types[0] if types else "",
             "secondary": types[1] if len(types) > 1 else "",
@@ -95,9 +97,8 @@ def extract_base_stats(page: BeautifulSoup) -> Dict[str, int]:
     return {label: stats.get(label, 0) for label in BASE_STATS}
 
 
-def fetch_pokemon_stats(name: str) -> Dict[str, int]:
-    slug = normalize_slug(name)
-    detail_url = f"https://pokemondb.net/pokedex/{slug}"
+def fetch_pokemon_stats(url: str) -> Dict[str, int]:
+    detail_url = url if url.startswith("http") else f"https://pokemondb.net{url}"
     page = fetch_page(detail_url)
     return extract_base_stats(page)
 
@@ -113,7 +114,7 @@ def scrape_gen_1() -> List[Dict[str, Any]]:
         if item is None:
             continue
 
-        stats = fetch_pokemon_stats(item["name"])
+        stats = fetch_pokemon_stats(item["url"])
         record = {
             "national_dex": item["national_dex"],
             "name": item["name"],
