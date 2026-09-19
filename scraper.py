@@ -28,7 +28,17 @@ def fetch_page(url: str) -> BeautifulSoup:
     return BeautifulSoup(response.text, "html.parser")
 
 
+SPECIAL_SLUGS = {
+    "Nidoran♀": "nidoran-f",
+    "Nidoran♂": "nidoran-m",
+    "Farfetch'd": "farfetchd",
+    "Mr. Mime": "mr-mime",
+}
+
+
 def normalize_slug(name: str) -> str:
+    if name in SPECIAL_SLUGS:
+        return SPECIAL_SLUGS[name]
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
 
 
