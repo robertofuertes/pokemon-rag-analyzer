@@ -48,9 +48,9 @@ def extract_row_data(row: Any) -> Optional[Dict[str, Any]]:
     type_links = row.select("td:nth-of-type(3) a")
 
     if not number_cell or not name_cell:
-        href = name_cell.get("href", "")
         return None
 
+    href = name_cell.get("href", "")
     number_text = number_cell.get_text(strip=True)
     name = name_cell.get_text(strip=True)
 
