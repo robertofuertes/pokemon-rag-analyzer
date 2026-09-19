@@ -108,15 +108,27 @@ def scrape_gen_1() -> List[Dict[str, Any]]:
     rows = page.select("table#pokedex tbody tr")
 
     records: List[Dict[str, Any]] = []
+    seen_dex_numbers: set[int] = set()
 
     for row in rows:
         item = extract_row_data(row)
         if item is None:
             continue
 
+        dex_number = item["national_dex"]
+
+        # Only keep the original 151 Gen 1 Pokemon, and skip
+        # duplicate/alternate-form rows for the same dex number.
+        if dex_number < 1 or dex_number > 151:
+            continue
+        if dex_number in seen_dex_numbers:
+            continue
+
+        seen_dex_numbers.add(dex_number)
+
         stats = fetch_pokemon_stats(item["url"])
         record = {
-            "national_dex": item["national_dex"],
+            "national_dex": dex_number,
             "name": item["name"],
             "primary_type": item["types"]["primary"],
             "secondary_type": item["types"]["secondary"],
