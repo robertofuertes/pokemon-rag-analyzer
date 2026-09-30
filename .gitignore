@@ -8,3 +8,12 @@ __pycache__/
 .env.*
 .DS_Store
 pokemon_gen1.json
+
+# Test caches
+.pytest_cache/
+.cache/
+
+# Local ChromaDB persistence/index data
+chroma_data/
+chroma_db/
+*.chroma/
