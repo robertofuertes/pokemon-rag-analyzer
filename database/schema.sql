@@ -1,10 +1,17 @@
 -- Week 2 relational database schema for the Pokémon Gen 1 battle analyzer.
+--
+-- {{DB_NAME}} is a placeholder substituted with the validated MYSQL_DATABASE
+-- value (letters, digits, underscores only) before this file is executed.
+-- `database/load_pokemon_data.py` performs this substitution automatically.
+-- To run this file directly with the mysql CLI, substitute the placeholder
+-- yourself first, e.g.:
+--   sed "s/{{DB_NAME}}/$MYSQL_DATABASE/g" database/schema.sql | mysql -u "$MYSQL_USER" -p
 
-CREATE DATABASE IF NOT EXISTS pokemon_rag
+CREATE DATABASE IF NOT EXISTS {{DB_NAME}}
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE pokemon_rag;
+USE {{DB_NAME}};
 
 CREATE TABLE IF NOT EXISTS pokemon_types (
     id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,

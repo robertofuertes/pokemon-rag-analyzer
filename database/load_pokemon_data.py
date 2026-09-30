@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -16,6 +17,36 @@ ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 
 DATABASE = os.getenv("MYSQL_DATABASE", "pokemon_rag")
+
+# Supported MySQL identifier format for values that are interpolated into SQL
+# text (e.g. the database name). Restricting to letters, digits, and
+# underscores (starting with a letter or underscore) avoids building SQL from
+# unsafe string interpolation while still allowing standard database names.
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+
+
+def validate_identifier(name: str) -> str:
+    """Validate a value intended for use as a MySQL identifier.
+
+    Only ``[A-Za-z_][A-Za-z0-9_]{0,63}`` is accepted (max 64 characters,
+    matching MySQL's identifier length limit). Raises ``ValueError`` for
+    anything else instead of allowing arbitrary strings into SQL text.
+    """
+    if not _IDENTIFIER_RE.match(name):
+        raise ValueError(
+            f"Invalid MySQL identifier: {name!r}. Only letters, digits, and "
+            "underscores are allowed, and it must start with a letter or "
+            "underscore (max 64 characters)."
+        )
+    return name
+
+
+def quote_identifier(name: str) -> str:
+    """Validate and backtick-quote a MySQL identifier for safe interpolation."""
+    validate_identifier(name)
+    return f"`{name}`"
+
+
 GEN1_TYPES = [
     "Normal", "Fire", "Water", "Electric", "Grass", "Ice", "Fighting",
     "Poison", "Ground", "Flying", "Psychic", "Bug", "Rock", "Ghost", "Dragon",
@@ -52,7 +83,8 @@ def connection() -> mysql.connector.MySQLConnection:
 
 
 def execute_schema(conn: mysql.connector.MySQLConnection) -> None:
-    schema = (ROOT / "database" / "schema.sql").read_text(encoding="utf-8")
+    schema_template = (ROOT / "database" / "schema.sql").read_text(encoding="utf-8")
+    schema = schema_template.replace("{{DB_NAME}}", quote_identifier(DATABASE))
     with conn.cursor() as cursor:
         for statement in schema.split(";"):
             statement = statement.strip()
@@ -130,6 +162,8 @@ def load_pokemon(conn: mysql.connector.MySQLConnection, ids: Dict[str, int], pat
 
 
 def main() -> None:
+    validate_identifier(DATABASE)
+
     json_path = Path(os.getenv("POKEMON_JSON_PATH", str(ROOT / "pokemon_gen1.json")))
     if not json_path.exists():
         raise FileNotFoundError(
