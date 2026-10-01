@@ -5,3 +5,6 @@ mysql-connector-python==9.0.0
 python-dotenv==1.0.1
 chromadb>=0.5.0,<1.6.0
 pytest>=7.4,<9
+openai
+streamlit
+pytest
