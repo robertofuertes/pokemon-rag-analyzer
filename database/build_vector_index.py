@@ -98,7 +98,12 @@ class DeterministicHashingEmbeddingFunction:
 
     @staticmethod
     def build_from_config(config: Dict[str, Any]) -> "DeterministicHashingEmbeddingFunction":
-        return DeterministicHashingEmbeddingFunction(dimensions=config.get("dimensions"))
+        # `dimensions` defaults to None (which the constructor itself maps
+        # to `_embedding_dimensions()`), but spell the fallback out
+        # explicitly here too so the serialized config always round-trips
+        # to a concrete, non-None dimension count.
+        dimensions = config.get("dimensions") or _embedding_dimensions()
+        return DeterministicHashingEmbeddingFunction(dimensions=dimensions)
 
     def _embed(self, text: str) -> List[float]:
         vector = [0.0] * self.dimensions
