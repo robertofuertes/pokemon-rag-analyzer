@@ -63,9 +63,11 @@ clear `ValueError` before any SQL runs.
 - `type_effectiveness` stores present-day attack type vs defender type
   damage multipliers for all 18 modern types.
 
-Re-running `load_pokemon_data.py` is safe: the schema uses
-`CREATE ... IF NOT EXISTS`, and Pokémon/stat rows are inserted with
-`ON DUPLICATE KEY UPDATE` upserts.
+Re-running `load_pokemon_data.py` is safe: tables use
+`CREATE TABLE IF NOT EXISTS`, the loader checks `information_schema` before
+creating the defender/multiplier index (MySQL does not support
+`CREATE INDEX IF NOT EXISTS` across all supported 8.0 variants), and
+Pokémon/stat rows are inserted with `ON DUPLICATE KEY UPDATE` upserts.
 
 ## ChromaDB vector index setup
 

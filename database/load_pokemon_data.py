@@ -23,6 +23,11 @@ DATABASE = os.getenv("MYSQL_DATABASE", "pokemon_rag")
 # underscores (starting with a letter or underscore) avoids building SQL from
 # unsafe string interpolation while still allowing standard database names.
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+_CREATE_INDEX_RE = re.compile(
+    r"^\s*CREATE\s+(?:UNIQUE\s+)?INDEX\s+`?([A-Za-z_][A-Za-z0-9_]*)`?\s+"
+    r"ON\s+`?([A-Za-z_][A-Za-z0-9_]*)`?\b",
+    re.IGNORECASE,
+)
 
 
 def validate_identifier(name: str) -> str:
@@ -98,6 +103,21 @@ def execute_schema(conn: mysql.connector.MySQLConnection) -> None:
         for statement in schema.split(";"):
             statement = statement.strip()
             if statement:
+                index_match = _CREATE_INDEX_RE.match(statement)
+                if index_match:
+                    cursor.execute(
+                        """
+                        SELECT 1
+                        FROM information_schema.statistics
+                        WHERE table_schema = DATABASE()
+                          AND table_name = %s
+                          AND index_name = %s
+                        LIMIT 1
+                        """,
+                        (index_match.group(2), index_match.group(1)),
+                    )
+                    if cursor.fetchone():
+                        continue
                 cursor.execute(statement)
     conn.commit()
 
