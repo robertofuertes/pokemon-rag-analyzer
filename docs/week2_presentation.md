@@ -101,7 +101,9 @@ pokemon ─── pokemon_base_stats
 
 ### Responsibilities
 
-- `pokemon_types`: canonical list of Gen 1 elemental types.
+- `pokemon_types`: canonical list of modern (post Gen 6) elemental
+  types — scraping scope stays limited to National Dex #1–151 for speed,
+  but the type list and effectiveness data are present-day canonical.
 - `pokemon`: one row per Pokémon profile and its type relationships.
 - `pokemon_base_stats`: six numeric base stats for each Pokémon.
 - `type_effectiveness`: attack-type-to-defender-type multipliers.
@@ -133,7 +135,8 @@ or malicious `MYSQL_DATABASE` value.
 
 ## Slide 6 — `pokemon_types`, `pokemon`, `pokemon_base_stats`, `type_effectiveness`
 
-- `pokemon_types`: stable IDs for the 15 Gen 1 elemental types, with a
+- `pokemon_types`: stable IDs for the 18 modern elemental types
+  (including Dark, Steel, and Fairy, added in later generations), with a
   unique `name` column.
 - `pokemon`: `national_dex` primary key, unique name, required primary
   type, optional secondary type (many Gen 1 Pokémon are single-typed).
@@ -157,7 +160,8 @@ exposes a computed `base_stat_total` for convenient downstream queries.
 2. Validates `MYSQL_DATABASE` as a safe identifier.
 3. Substitutes the validated, quoted database name into `schema.sql` and
    executes it (creating the database and tables if needed).
-4. Inserts the canonical Gen 1 type list using duplicate-safe inserts.
+4. Inserts the canonical modern (18-type) list using duplicate-safe
+   inserts.
 5. Seeds non-neutral type-effectiveness relationships.
 6. Reads `pokemon_gen1.json` produced by the Week 1 scraper.
 7. Upserts Pokémon profiles and all six base stats.
@@ -312,7 +316,7 @@ Before considering Week 2 complete, verify:
 - The loader finishes without a foreign-key error.
 - `SELECT COUNT(*) FROM pokemon;` returns 151.
 - `SELECT COUNT(*) FROM pokemon_base_stats;` returns 151.
-- `SELECT COUNT(*) FROM pokemon_types;` returns 15.
+- `SELECT COUNT(*) FROM pokemon_types;` returns 18.
 - Type-effectiveness rows exist for non-neutral matchups.
 - The profile view returns Pokémon names, types, stats, and totals.
 - Re-running the loader does not create duplicate rows.
