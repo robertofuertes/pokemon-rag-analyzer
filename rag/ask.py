@@ -1,22 +1,12 @@
-"""Week 3 ask pipeline: route -> retrieve -> build prompt -> answer."""
+"""Week 3/4 ask pipeline: route -> retrieve -> build prompt -> answer."""
 
 from __future__ import annotations
 
 from typing import Any, Dict
 
 from rag.context_assembler import assemble_context
+from rag.llm_client import generate_answer
 from rag.prompt_builder import build_prompt
-
-
-def _mock_llm_call(prompt: str) -> str:
-    """
-    Temporary local stub.
-    Replace with real OpenAI call in Week 4.
-    """
-    return (
-        "Mock answer (replace with real LLM):\n"
-        "I analyzed the provided SQL/vector evidence and generated this placeholder response."
-    )
 
 
 def ask(user_query: str, top_k: int = 5) -> Dict[str, Any]:
@@ -26,7 +16,7 @@ def ask(user_query: str, top_k: int = 5) -> Dict[str, Any]:
 
     context = assemble_context(user_query, top_k=top_k)
     prompt = build_prompt(context)
-    answer = _mock_llm_call(prompt)
+    answer = generate_answer(prompt)
 
     return {
         "query": user_query,
@@ -34,5 +24,5 @@ def ask(user_query: str, top_k: int = 5) -> Dict[str, Any]:
         "routing": context.get("routing", {}),
         "sql_context": context.get("sql_context", {}),
         "vector_context": context.get("vector_context", []),
-        "prompt_preview": prompt[:1200],  # helpful for debugging/logging
+        "prompt_preview": prompt[:1200],
     }
