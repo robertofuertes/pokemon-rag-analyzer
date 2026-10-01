@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from database.build_vector_index import query_index
+from database.build_vector_index import (
+    DEFAULT_PERSIST_DIRECTORY,
+    DEFAULT_COLLECTION_NAME,
+    query_index,
+)
 
 
 def search_tactical_context(
@@ -13,11 +17,6 @@ def search_tactical_context(
     persist_directory: str | None = None,
     collection_name: str | None = None,
 ) -> List[Dict[str, Any]]:
-    """Return normalized tactical retrieval rows from ChromaDB.
-
-    Wraps Week 2's query_index() and flattens Chroma's nested result format
-    into a list of dicts that are easy for routers/prompts to consume.
-    """
     if not query_text or not query_text.strip():
         raise ValueError("query_text must be a non-empty string.")
 
@@ -26,8 +25,8 @@ def search_tactical_context(
     raw = query_index(
         query_text=query_text.strip(),
         n_results=n_results,
-        persist_directory=persist_directory,
-        collection_name=collection_name,
+        persist_directory=persist_directory or DEFAULT_PERSIST_DIRECTORY,
+        collection_name=collection_name or DEFAULT_COLLECTION_NAME,
     )
 
     # Chroma query result shape:
