@@ -53,6 +53,43 @@ class TestSchemaTemplating:
         # The schema must not hardcode a specific database name anymore.
         assert "CREATE DATABASE IF NOT EXISTS pokemon_rag" not in schema_text
 
+    def test_execute_schema_skips_existing_indexes_on_rerun(self, monkeypatch):
+        index_names = set()
+        executed_indexes = []
+
+        class Cursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def execute(self, statement, params=None):
+                if "FROM information_schema.statistics" in statement:
+                    self.index_exists = (params[0], params[1]) in index_names
+                else:
+                    match = load_pokemon_data._CREATE_INDEX_RE.match(statement)
+                    if match:
+                        index_names.add((match.group(2), match.group(1)))
+                        executed_indexes.append(match.group(1))
+
+            def fetchone(self):
+                return (1,) if self.index_exists else None
+
+        class Connection:
+            def cursor(self):
+                return Cursor()
+
+            def commit(self):
+                pass
+
+        monkeypatch.setattr(load_pokemon_data, "DATABASE", "pokemon_rag_test")
+        connection = Connection()
+        load_pokemon_data.execute_schema(connection)
+        load_pokemon_data.execute_schema(connection)
+
+        assert executed_indexes == ["idx_effectiveness_defender_multiplier"]
+
 
 class TestTypeEffectivenessData:
     def test_all_type_names_are_in_modern_types(self):
