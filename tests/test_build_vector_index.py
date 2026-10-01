@@ -62,6 +62,30 @@ class TestDeterministicHashingEmbeddingFunction:
         vector = embed([""])[0]
         assert vector == [0.0] * 8
 
+    def test_embed_query_is_consistent_with_call(self):
+        # Regression test: ChromaDB's current query API calls
+        # `embed_query` directly (not `__call__`) when embedding query
+        # text, so the method must exist and must produce embeddings that
+        # are deterministic and dimensionally/semantically compatible with
+        # those produced for documents.
+        embed = build_vector_index.DeterministicHashingEmbeddingFunction(dimensions=32)
+        text = "fast special attacker"
+        assert embed.embed_query([text]) == embed([text])
+
+    def test_embed_query_output_is_normalized_and_sized(self):
+        embed = build_vector_index.DeterministicHashingEmbeddingFunction(dimensions=16)
+        vector = embed.embed_query(["Pikachu is an Electric type Pokemon"])[0]
+        assert len(vector) == 16
+        norm_squared = sum(component * component for component in vector)
+        assert norm_squared == pytest.approx(1.0, abs=1e-6)
+
+    def test_get_config_and_build_from_config_round_trip(self):
+        embed = build_vector_index.DeterministicHashingEmbeddingFunction(dimensions=64)
+        config = embed.get_config()
+        rebuilt = build_vector_index.DeterministicHashingEmbeddingFunction.build_from_config(config)
+        assert rebuilt.dimensions == 64
+        assert rebuilt(["fast special attacker"]) == embed(["fast special attacker"])
+
 
 class TestCombatRoleAndTags:
     def test_fast_high_offense_pokemon_is_fast_attacker(self):
@@ -135,6 +159,62 @@ class TestLoadPokemonRecords:
 
         records = build_vector_index.load_pokemon_records(json_path)
         assert records == [SAMPLE_RECORD]
+
+
+@pytest.mark.skipif(
+    not build_vector_index.CHROMA_AVAILABLE, reason="chromadb is not installed"
+)
+class TestQueryIndexRegression:
+    """Regression coverage for the `embed_query` AttributeError.
+
+    Exercises the real ChromaDB `query()` code path (local, on-disk
+    PersistentClient only -- no external server/network) end-to-end
+    through our custom embedding function, which previously failed with
+    ``AttributeError: ... has no attribute 'embed_query'``.
+    """
+
+    def test_build_and_query_round_trip(self, tmp_path):
+        persist_directory = str(tmp_path / "chroma_data")
+        records = [SAMPLE_RECORD, SINGLE_TYPE_RECORD]
+        ids, documents, metadatas = build_vector_index.generate_documents(records)
+
+        collection = build_vector_index.get_collection(
+            persist_directory=persist_directory,
+            collection_name="test-collection",
+        )
+        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+
+        results = build_vector_index.query_index(
+            "fast special attacker",
+            n_results=2,
+            persist_directory=persist_directory,
+            collection_name="test-collection",
+        )
+
+        assert len(results["documents"][0]) == 2
+        assert set(ids) == {
+            build_vector_index.build_document_id(r) for r in (SAMPLE_RECORD, SINGLE_TYPE_RECORD)
+        }
+
+    def test_query_index_does_not_raise_attribute_error(self, tmp_path):
+        persist_directory = str(tmp_path / "chroma_data")
+        ids, documents, metadatas = build_vector_index.generate_documents([SAMPLE_RECORD])
+        collection = build_vector_index.get_collection(
+            persist_directory=persist_directory,
+            collection_name="test-collection",
+        )
+        collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
+
+        # This is the exact call that previously raised:
+        # AttributeError: 'DeterministicHashingEmbeddingFunction' object
+        # has no attribute 'embed_query'
+        results = build_vector_index.query_index(
+            "fast special attacker",
+            n_results=5,
+            persist_directory=persist_directory,
+            collection_name="test-collection",
+        )
+        assert results["documents"][0]
 
 
 class TestChromaOptionalImport:
