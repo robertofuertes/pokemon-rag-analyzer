@@ -82,6 +82,16 @@ def _extract_stat(user_query: str) -> Optional[str]:
         return "sp_atk"
     if "sp def" in q or "sp. def" in q or "special defense" in q:
         return "sp_def"
+    if (
+        "base stat total" in q
+        or "base stats total" in q
+        or "stat total" in q
+        or "stats total" in q
+        or "bst" in q
+        or "base_stat_total" in q
+        or "overall stats" in q
+    ):
+        return "base_stat_total"
     if "speed" in q or "fastest" in q or "slowest" in q:
         return "speed"
     if re.search(r"\battack\b", q):

@@ -21,6 +21,7 @@ STAT_COLUMNS = {
     "sp_atk": "sp_atk",
     "sp_def": "sp_def",
     "speed": "speed",
+    "base_stat_total": "base_stat_total",
 }
 
 
