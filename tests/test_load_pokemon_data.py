@@ -55,8 +55,8 @@ class TestSchemaTemplating:
 
 
 class TestTypeEffectivenessData:
-    def test_all_type_names_are_in_gen1_types(self):
-        known = set(load_pokemon_data.GEN1_TYPES)
+    def test_all_type_names_are_in_modern_types(self):
+        known = set(load_pokemon_data.MODERN_TYPES)
         for attacker, defenders in load_pokemon_data.TYPE_EFFECTIVENESS.items():
             assert attacker in known
             for defender in defenders:
@@ -67,6 +67,17 @@ class TestTypeEffectivenessData:
             for multiplier in defenders.values():
                 assert 0.0 <= multiplier <= 4.0
 
-    def test_gen1_types_has_fifteen_unique_entries(self):
-        assert len(load_pokemon_data.GEN1_TYPES) == 15
-        assert len(set(load_pokemon_data.GEN1_TYPES)) == 15
+    def test_modern_types_has_eighteen_unique_entries(self):
+        assert len(load_pokemon_data.MODERN_TYPES) == 18
+        assert len(set(load_pokemon_data.MODERN_TYPES)) == 18
+
+    def test_modern_types_include_dark_steel_and_fairy(self):
+        modern_additions = {"Dark", "Steel", "Fairy"}
+        assert modern_additions.issubset(set(load_pokemon_data.MODERN_TYPES))
+
+    def test_every_modern_type_is_an_attacker_in_effectiveness_data(self):
+        # Every modern type should have at least one non-neutral interaction
+        # defined, so the matrix isn't missing coverage for newer types.
+        assert set(load_pokemon_data.TYPE_EFFECTIVENESS.keys()) == set(
+            load_pokemon_data.MODERN_TYPES
+        )

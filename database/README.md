@@ -9,7 +9,8 @@ for the Pokémon battle analyzer.
   `{{DB_NAME}}` placeholder is substituted with the validated
   `MYSQL_DATABASE` value at load time.
 - `database/load_pokemon_data.py` — loader that creates the schema, seeds
-  type matchups, and imports scraped Pokémon data. Honors `MYSQL_DATABASE`
+  the modern 18-type matchup table, and imports scraped Pokémon data (still
+  scraped from National Dex #1–151 only, for speed). Honors `MYSQL_DATABASE`
   from `.env` consistently (used both to create/select the database and to
   report the loaded record count).
 - `database/build_vector_index.py` — builds/queries a local, persistent
@@ -49,12 +50,18 @@ clear `ValueError` before any SQL runs.
 
 ## Tables
 
-- `pokemon_types` keeps the canonical elemental type list.
-- `pokemon` stores each Gen 1 Pokémon record, including the primary and
-  secondary type.
+- `pokemon_types` keeps the canonical elemental type list. Scraping scope
+  stays limited to National Dex #1–151 for speed, but the type list itself
+  covers the full modern (post Gen 6) 18-type set — Normal, Fire, Water,
+  Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug,
+  Rock, Ghost, Dragon, Dark, Steel, and Fairy — since the live source now
+  reports present-day/retconned typings for some Gen 1 Pokémon (e.g. several
+  were later given the Fairy type).
+- `pokemon` stores each scraped Pokémon record (#1–151), including the
+  primary and secondary type as reported by the source today.
 - `pokemon_base_stats` stores the six core stats.
-- `type_effectiveness` stores attack type vs defender type damage
-  multipliers.
+- `type_effectiveness` stores present-day attack type vs defender type
+  damage multipliers for all 18 modern types.
 
 Re-running `load_pokemon_data.py` is safe: the schema uses
 `CREATE ... IF NOT EXISTS`, and Pokémon/stat rows are inserted with
