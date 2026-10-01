@@ -82,6 +82,24 @@ class DeterministicHashingEmbeddingFunction:
     def __call__(self, input: Sequence[str]) -> List[List[float]]:  # noqa: A002
         return [self._embed(text) for text in input]
 
+    # Newer ChromaDB clients (>=1.x) call `embed_query` directly when
+    # embedding query text for `collection.query(...)`, instead of falling
+    # back to `__call__`. Our hashing scheme is identical for documents and
+    # queries, so simply delegate to `__call__` to keep both deterministic
+    # and dimensionally compatible with each other.
+    def embed_query(self, input: Sequence[str]) -> List[List[float]]:  # noqa: A002
+        return self.__call__(input)
+
+    # Implementing these makes the embedding function serializable as part
+    # of a collection's stored configuration, matching the full ChromaDB
+    # `EmbeddingFunction` interface rather than relying on duck-typing.
+    def get_config(self) -> Dict[str, Any]:
+        return {"dimensions": self.dimensions}
+
+    @staticmethod
+    def build_from_config(config: Dict[str, Any]) -> "DeterministicHashingEmbeddingFunction":
+        return DeterministicHashingEmbeddingFunction(dimensions=config.get("dimensions"))
+
     def _embed(self, text: str) -> List[float]:
         vector = [0.0] * self.dimensions
         tokens = re.findall(r"[a-z0-9]+", text.lower())
