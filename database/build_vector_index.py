@@ -101,8 +101,12 @@ class DeterministicHashingEmbeddingFunction:
         # `dimensions` defaults to None (which the constructor itself maps
         # to `_embedding_dimensions()`), but spell the fallback out
         # explicitly here too so the serialized config always round-trips
-        # to a concrete, non-None dimension count.
-        dimensions = config.get("dimensions") or _embedding_dimensions()
+        # to a concrete dimension count. Use an explicit `is None` check
+        # (rather than `or`) so an explicit `0` in the config isn't
+        # silently replaced by the default.
+        dimensions = config.get("dimensions")
+        if dimensions is None:
+            dimensions = _embedding_dimensions()
         return DeterministicHashingEmbeddingFunction(dimensions=dimensions)
 
     def _embed(self, text: str) -> List[float]:
